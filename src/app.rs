@@ -73,20 +73,17 @@ impl PomoApp {
             ControlAction::Reset => {
                 self.timer.reset();
                 if let Some(audio) = &mut self.audio {
-                    audio.on_timer_pause();
+                    audio.on_timer_reset();
                 }
                 self.update_tray_label();
             }
             ControlAction::Skip => {
                 self.timer.skip();
-                if let Some(audio) = &mut self.audio {
-                    audio.on_timer_pause();
-                }
                 self.update_tray_label();
             }
             ControlAction::SetBgm(mode) => {
                 if let Some(audio) = &mut self.audio {
-                    audio.set_mode(mode, self.timer.is_running());
+                    audio.set_mode(mode);
                 }
             }
             ControlAction::ToggleSettings => {
@@ -151,9 +148,6 @@ impl eframe::App for PomoApp {
         if self.timer.tick() {
             // Phase just finished
             notify_phase_complete(&phase_before);
-            if let Some(audio) = &mut self.audio {
-                audio.on_timer_pause();
-            }
             self.timer.skip(); // Auto-advance to next phase
             self.update_tray_label();
         }

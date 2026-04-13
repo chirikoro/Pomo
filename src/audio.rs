@@ -1,4 +1,3 @@
-use std::sync::Arc;
 use std::time::Duration;
 
 use rodio::source::Source;
@@ -27,68 +26,92 @@ impl BgmMode {
 
 pub struct AudioManager {
     _stream: OutputStream,
-    _stream_handle: Arc<OutputStreamHandle>,
+    stream_handle: OutputStreamHandle,
     sink: Option<Sink>,
     current_mode: BgmMode,
+    is_playing: bool,
 }
 
 impl AudioManager {
     pub fn new() -> Option<Self> {
-        let (stream, handle) = OutputStream::try_default().ok()?;
-        Some(Self {
-            _stream: stream,
-            _stream_handle: Arc::new(handle),
-            sink: None,
-            current_mode: BgmMode::Off,
-        })
+        match OutputStream::try_default() {
+            Ok((stream, handle)) => Some(Self {
+                _stream: stream,
+                stream_handle: handle,
+                sink: None,
+                current_mode: BgmMode::Off,
+                is_playing: false,
+            }),
+            Err(e) => {
+                eprintln!("[Pomo] Audio init failed: {}. BGM disabled.", e);
+                None
+            }
+        }
     }
 
     pub fn current_mode(&self) -> BgmMode {
         self.current_mode
     }
 
-    pub fn play(&mut self, mode: BgmMode) {
-        self.stop();
+    pub fn set_mode(&mut self, mode: BgmMode) {
+        let was_playing = self.is_playing;
+        self.stop_playback();
         self.current_mode = mode;
-        if mode == BgmMode::Off {
-            return;
-        }
-
-        if let Ok(sink) = Sink::try_new(&self._stream_handle) {
-            let source: Box<dyn Source<Item = f32> + Send> = match mode {
-                BgmMode::Cafe => Box::new(CafeNoise::new()),
-                BgmMode::Nature => Box::new(NatureNoise::new()),
-                BgmMode::Off => return,
-            };
-            sink.set_volume(0.15);
-            sink.append(source);
-            self.sink = Some(sink);
-        }
-    }
-
-    pub fn stop(&mut self) {
-        if let Some(sink) = self.sink.take() {
-            sink.stop();
-        }
-    }
-
-    pub fn set_mode(&mut self, mode: BgmMode, is_running: bool) {
-        self.current_mode = mode;
-        if is_running && mode != BgmMode::Off {
-            self.play(mode);
-        } else {
-            self.stop();
+        if mode != BgmMode::Off {
+            // Always start playing when a BGM mode is selected
+            self.start_playback();
+        } else if was_playing {
+            // Switching to Off: already stopped above
         }
     }
 
     pub fn on_timer_start(&mut self) {
-        if self.current_mode != BgmMode::Off {
-            self.play(self.current_mode);
+        // Resume BGM if a mode is selected but not currently playing
+        if self.current_mode != BgmMode::Off && !self.is_playing {
+            self.start_playback();
         }
     }
 
     pub fn on_timer_pause(&mut self) {
-        self.stop();
+        // Keep BGM playing during pause - it's ambient background music
+        // Only stop if user explicitly switches to Off
+    }
+
+    pub fn on_timer_reset(&mut self) {
+        self.stop_playback();
+    }
+
+    fn start_playback(&mut self) {
+        self.stop_playback();
+
+        let mode = self.current_mode;
+        if mode == BgmMode::Off {
+            return;
+        }
+
+        match Sink::try_new(&self.stream_handle) {
+            Ok(sink) => {
+                let source: Box<dyn Source<Item = f32> + Send> = match mode {
+                    BgmMode::Cafe => Box::new(CafeNoise::new()),
+                    BgmMode::Nature => Box::new(NatureNoise::new()),
+                    BgmMode::Off => return,
+                };
+                sink.set_volume(0.5);
+                sink.append(source);
+                self.sink = Some(sink);
+                self.is_playing = true;
+            }
+            Err(e) => {
+                eprintln!("[Pomo] Failed to create audio sink: {}", e);
+            }
+        }
+    }
+
+    fn stop_playback(&mut self) {
+        if let Some(sink) = self.sink.take() {
+            sink.stop();
+        }
+        self.is_playing = false;
     }
 }
 
@@ -106,17 +129,19 @@ impl CafeNoise {
         Self {
             sample_rate: 44100,
             state: 0.0,
-            rng_state: 12345,
+            // Use a well-distributed initial seed
+            rng_state: 0xDEAD_BEEF_CAFE_1234,
         }
     }
 
     fn next_random(&mut self) -> f32 {
-        // Simple xorshift64 PRNG
+        // xorshift64
         self.rng_state ^= self.rng_state << 13;
         self.rng_state ^= self.rng_state >> 7;
         self.rng_state ^= self.rng_state << 17;
-        // Convert to -1.0..1.0
-        (self.rng_state as f32 / u64::MAX as f32) * 2.0 - 1.0
+        // Map to -1.0..1.0 using upper bits for better distribution
+        let bits = (self.rng_state >> 40) as u32; // top 24 bits
+        (bits as f32 / 0x00FF_FFFF as f32) * 2.0 - 1.0
     }
 }
 
@@ -126,10 +151,9 @@ impl Iterator for CafeNoise {
     fn next(&mut self) -> Option<f32> {
         let white = self.next_random();
         // Brown noise: integrate white noise with leak
-        self.state = self.state * 0.998 + white * 0.02;
-        // Soft clip to prevent overflow
-        let sample = self.state.tanh() * 0.6;
-        Some(sample)
+        self.state = self.state * 0.997 + white * 0.04;
+        // Soft clip
+        Some(self.state.tanh())
     }
 }
 
@@ -168,15 +192,19 @@ impl NatureNoise {
             rows: [0.0; 16],
             running_sum: 0.0,
             index: 0,
-            rng_state: 67890,
+            // Use a well-distributed initial seed
+            rng_state: 0xCAFE_BABE_1337_5678,
         }
     }
 
     fn next_random(&mut self) -> f32 {
+        // xorshift64
         self.rng_state ^= self.rng_state << 13;
         self.rng_state ^= self.rng_state >> 7;
         self.rng_state ^= self.rng_state << 17;
-        (self.rng_state as f32 / u64::MAX as f32) * 2.0 - 1.0
+        // Map to -1.0..1.0 using upper bits
+        let bits = (self.rng_state >> 40) as u32;
+        (bits as f32 / 0x00FF_FFFF as f32) * 2.0 - 1.0
     }
 }
 
@@ -200,10 +228,10 @@ impl Iterator for NatureNoise {
 
         // Add subtle low-frequency modulation for "wind" effect
         let t = self.index as f32 / self.sample_rate as f32;
-        let wind = (t * 0.3 * std::f32::consts::TAU).sin() * 0.1;
+        let wind = (t * 0.3 * std::f32::consts::TAU).sin() * 0.15;
 
-        let sample = (pink + wind) * 0.5;
-        Some(sample.clamp(-1.0, 1.0))
+        let sample = (pink * 1.5 + wind).clamp(-1.0, 1.0);
+        Some(sample)
     }
 }
 
