@@ -1,0 +1,17 @@
+[package]
+name = "pomo"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+eframe = "0.31"
+tray-icon = "0.19"
+notify-rust = "4"
+rodio = { version = "0.19", default-features = false }
+image = { version = "0.25", default-features = false, features = ["png"] }
+rand = "0.8"
+
+[profile.release]
+opt-level = 2
+strip = true
+lto = "thin"
