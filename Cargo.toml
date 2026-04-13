@@ -8,7 +8,7 @@ eframe = "0.31"
 tray-icon = "0.19"
 notify-rust = "4"
 rodio = { version = "0.19", default-features = false }
-image = { version = "0.25", default-features = false, features = ["png"] }
+image = { version = "0.25", default-features = false, features = ["png", "ico"] }
 rand = "0.8"
 
 [profile.release]
