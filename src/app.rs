@@ -65,7 +65,7 @@ impl PomoApp {
                 } else {
                     self.timer.start();
                     if let Some(audio) = &mut self.audio {
-                        audio.on_timer_start();
+                        audio.on_timer_start(self.timer.phase);
                     }
                 }
                 self.update_tray_label();
@@ -79,6 +79,9 @@ impl PomoApp {
             }
             ControlAction::Skip => {
                 self.timer.skip();
+                if let Some(audio) = &mut self.audio {
+                    audio.on_phase_change(self.timer.phase);
+                }
                 self.update_tray_label();
             }
             ControlAction::SetBgm(mode) => {
@@ -149,6 +152,10 @@ impl eframe::App for PomoApp {
             // Phase just finished
             notify_phase_complete(&phase_before);
             self.timer.skip(); // Auto-advance to next phase
+            // Switch BGM tracks for the new phase
+            if let Some(audio) = &mut self.audio {
+                audio.on_phase_change(self.timer.phase);
+            }
             self.update_tray_label();
         }
 

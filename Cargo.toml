@@ -7,7 +7,7 @@ edition = "2021"
 eframe = "0.31"
 tray-icon = "0.19"
 notify-rust = "4"
-rodio = { version = "0.19", default-features = false }
+rodio = { version = "0.19", default-features = false, features = ["mp3"] }
 image = { version = "0.25", default-features = false, features = ["png", "ico"] }
 rand = "0.8"
 
