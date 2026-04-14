@@ -107,11 +107,19 @@ function initApp() {
   }
 
   async function onPhaseFinished(s) {
-    try { updateUI(await invoke('skip')); } catch (e) { showError('skip: ' + e); }
+    // Notify
     try {
       const msgs = { work: ['Work Complete!', 'Time for a break.'], short_break: ['Break Over!', 'Ready to focus?'], long_break: ['Long Break Over!', 'Starting a new cycle.'] };
       const [t, b] = msgs[s.phase] || ['Done', ''];
       new Notification(t, { body: b });
+    } catch (e) {}
+    // Auto-advance and auto-start next phase
+    try {
+      await invoke('skip');
+      const ns = await invoke('start');
+      updateUI(ns);
+      startPolling();
+      if (currentBgm !== 'off') playBgm(currentBgm, ns.phase);
     } catch (e) {}
   }
 
