@@ -1,8 +1,7 @@
 // =========================================================
-// Pomo - Frontend
+// Pomo - Frontend (no inline handlers)
 // =========================================================
 
-// Show error on screen (for debugging without devtools)
 function showError(msg) {
   let el = document.getElementById('debug-log');
   if (!el) {
@@ -14,7 +13,6 @@ function showError(msg) {
   el.textContent += msg + '\n';
 }
 
-// Wait for Tauri API to become available
 function waitForTauri(callback) {
   let attempts = 0;
   const check = () => {
@@ -22,7 +20,7 @@ function waitForTauri(callback) {
     if (window.__TAURI__ && window.__TAURI__.core && window.__TAURI__.core.invoke) {
       callback();
     } else if (attempts > 50) {
-      showError('ERROR: window.__TAURI__ not found after 5s. withGlobalTauri may not be set.');
+      showError('ERROR: window.__TAURI__ not found after 5s.');
     } else {
       setTimeout(check, 100);
     }
@@ -38,7 +36,6 @@ function initApp() {
   const invoke = window.__TAURI__.core.invoke;
   const listen = window.__TAURI__.event.listen;
 
-  // --- State ---
   let currentBgm = 'off';
   let currentPhase = 'work';
   let timerInterval = null;
@@ -53,6 +50,11 @@ function initApp() {
   const timeDisplay    = document.getElementById('time-display');
   const sessionDisplay = document.getElementById('session-display');
   const startBtn       = document.getElementById('start-btn');
+  const resetBtn       = document.getElementById('reset-btn');
+  const skipBtn        = document.getElementById('skip-btn');
+  const settingsBtn    = document.getElementById('settings-btn');
+  const settingsClose  = document.getElementById('settings-close-btn');
+  const saveBtn        = document.getElementById('save-btn');
   const ringProgress   = document.getElementById('ring-progress');
   const cycleDots      = document.getElementById('cycle-dots');
   const audio1         = document.getElementById('audio-1');
@@ -76,7 +78,7 @@ function initApp() {
     if (timerInterval) { clearInterval(timerInterval); timerInterval = null; }
   }
 
-  // --- UI Update ---
+  // --- UI ---
   function updateUI(s) {
     const c = PHASE_COLORS[s.phase] || PHASE_COLORS.work;
     document.documentElement.style.setProperty('--phase-color', c.color);
@@ -118,7 +120,7 @@ function initApp() {
   }
 
   async function onPhaseFinished(s) {
-    try { const ns = await invoke('skip'); updateUI(ns); } catch (e) { showError('skip: ' + e); }
+    try { updateUI(await invoke('skip')); } catch (e) { showError('skip: ' + e); }
     try {
       const msgs = { work: ['Work Complete!', 'Time for a break.'], short_break: ['Break Over!', 'Ready to focus?'], long_break: ['Long Break Over!', 'Starting a new cycle.'] };
       const [t, b] = msgs[s.phase] || ['Done', ''];
@@ -126,8 +128,8 @@ function initApp() {
     } catch (e) {}
   }
 
-  // --- Controls ---
-  window.toggleStartPause = async function () {
+  // --- Button event listeners ---
+  startBtn.addEventListener('click', async () => {
     try {
       const s = await invoke('tick');
       let ns;
@@ -136,28 +138,31 @@ function initApp() {
       updateUI(ns);
       if (ns.is_running && currentBgm !== 'off') playBgm(currentBgm, currentPhase);
     } catch (e) { showError('startPause: ' + e); }
-  };
+  });
 
-  window.doReset = async function () {
+  resetBtn.addEventListener('click', async () => {
     try { stopPolling(); updateUI(await invoke('reset')); stopAllAudio(); }
     catch (e) { showError('reset: ' + e); }
-  };
+  });
 
-  window.doSkip = async function () {
+  skipBtn.addEventListener('click', async () => {
     try {
       const s = await invoke('skip');
       updateUI(s);
       if (currentBgm !== 'off') playBgm(currentBgm, s.phase);
     } catch (e) { showError('skip: ' + e); }
-  };
+  });
 
   // --- BGM ---
-  window.setBgm = function (mode) {
-    currentBgm = mode;
-    updateBgmButtons();
-    if (mode === 'off') { stopAllAudio(); return; }
-    playBgm(mode, currentPhase);
-  };
+  document.querySelectorAll('.bgm-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const mode = btn.dataset.mode;
+      currentBgm = mode;
+      updateBgmButtons();
+      if (mode === 'off') { stopAllAudio(); return; }
+      playBgm(mode, currentPhase);
+    });
+  });
 
   function updateBgmButtons() {
     document.querySelectorAll('.bgm-btn').forEach(b =>
@@ -189,26 +194,30 @@ function initApp() {
   }
 
   // --- Settings ---
-  window.toggleSettings = async function () {
-    const sv = document.getElementById('settings-view');
-    const tv = document.getElementById('timer-view');
-    if (sv.style.display === 'none') {
-      sv.style.display = 'block'; tv.style.display = 'none';
-      try {
-        const s = await invoke('get_settings');
-        document.getElementById('s-work').value = s.work_minutes;
-        document.getElementById('s-work-val').textContent = s.work_minutes;
-        document.getElementById('s-break').value = s.short_break_minutes;
-        document.getElementById('s-break-val').textContent = s.short_break_minutes;
-        document.getElementById('s-long').value = s.long_break_minutes;
-        document.getElementById('s-long-val').textContent = s.long_break_minutes;
-        document.getElementById('s-sets').value = s.num_sets;
-        document.getElementById('s-sets-val').textContent = s.num_sets;
-      } catch (e) { showError('settings: ' + e); }
-    } else { sv.style.display = 'none'; tv.style.display = 'block'; }
-  };
+  function openSettings() {
+    document.getElementById('settings-view').style.display = 'block';
+    document.getElementById('timer-view').style.display = 'none';
+    invoke('get_settings').then(s => {
+      document.getElementById('s-work').value = s.work_minutes;
+      document.getElementById('s-work-val').textContent = s.work_minutes;
+      document.getElementById('s-break').value = s.short_break_minutes;
+      document.getElementById('s-break-val').textContent = s.short_break_minutes;
+      document.getElementById('s-long').value = s.long_break_minutes;
+      document.getElementById('s-long-val').textContent = s.long_break_minutes;
+      document.getElementById('s-sets').value = s.num_sets;
+      document.getElementById('s-sets-val').textContent = s.num_sets;
+    }).catch(e => showError('settings: ' + e));
+  }
 
-  window.saveSettings = async function () {
+  function closeSettings() {
+    document.getElementById('settings-view').style.display = 'none';
+    document.getElementById('timer-view').style.display = 'block';
+  }
+
+  settingsBtn.addEventListener('click', openSettings);
+  settingsClose.addEventListener('click', closeSettings);
+
+  saveBtn.addEventListener('click', async () => {
     try {
       const ns = {
         work_minutes: parseInt(document.getElementById('s-work').value),
@@ -217,11 +226,10 @@ function initApp() {
         num_sets: parseInt(document.getElementById('s-sets').value),
       };
       updateUI(await invoke('save_settings', { newSettings: ns }));
-      window.toggleSettings();
+      closeSettings();
     } catch (e) { showError('save: ' + e); }
-  };
+  });
 
-  // Slider live values
   ['s-work', 's-break', 's-long', 's-sets'].forEach(id => {
     document.getElementById(id).addEventListener('input', function () {
       document.getElementById(id + '-val').textContent = this.value;
@@ -235,11 +243,8 @@ function initApp() {
   });
 
   // --- Init ---
-  (async () => {
-    try {
-      const s = await invoke('tick');
-      updateUI(s);
-      if (s.is_running) startPolling();
-    } catch (e) { showError('init: ' + e); }
-  })();
+  invoke('tick').then(s => {
+    updateUI(s);
+    if (s.is_running) startPolling();
+  }).catch(e => showError('init: ' + e));
 }

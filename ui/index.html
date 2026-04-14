@@ -11,7 +11,7 @@
   <div id="timer-view">
     <div class="header">
       <span id="phase-label">WORK</span>
-      <button id="settings-btn" class="icon-btn" onclick="toggleSettings()">&#9881;</button>
+      <button id="settings-btn" class="icon-btn">&#9881;</button>
     </div>
 
     <div class="ring-container">
@@ -28,20 +28,20 @@
     </div>
 
     <div class="controls">
-      <button id="start-btn" class="btn primary" onclick="toggleStartPause()">Start</button>
-      <button class="btn secondary" onclick="doReset()">Reset</button>
+      <button id="start-btn" class="btn primary">Start</button>
+      <button id="reset-btn" class="btn secondary">Reset</button>
     </div>
     <div class="controls">
-      <button class="btn small" onclick="doSkip()">Skip</button>
+      <button id="skip-btn" class="btn small">Skip</button>
     </div>
 
     <div id="cycle-dots" class="cycle-dots"></div>
 
     <div class="bgm-selector">
       <span class="bgm-label">BGM:</span>
-      <button class="bgm-btn" data-mode="cafe" onclick="setBgm('cafe')">Cafe</button>
-      <button class="bgm-btn" data-mode="nature" onclick="setBgm('nature')">Nature</button>
-      <button class="bgm-btn active" data-mode="off" onclick="setBgm('off')">Off</button>
+      <button class="bgm-btn" data-mode="cafe">Cafe</button>
+      <button class="bgm-btn" data-mode="nature">Nature</button>
+      <button class="bgm-btn active" data-mode="off">Off</button>
     </div>
   </div>
 
@@ -49,7 +49,7 @@
   <div id="settings-view" style="display:none">
     <div class="header">
       <span>Settings</span>
-      <button class="icon-btn" onclick="toggleSettings()">&#10005;</button>
+      <button id="settings-close-btn" class="icon-btn">&#10005;</button>
     </div>
     <div class="settings-form">
       <label>Work: <input type="range" id="s-work" min="1" max="60" value="25">
@@ -60,7 +60,7 @@
         <span id="s-long-val">15</span> min</label>
       <label>Sets: <input type="range" id="s-sets" min="1" max="10" value="4">
         <span id="s-sets-val">4</span></label>
-      <button class="btn primary save-btn" onclick="saveSettings()">Save</button>
+      <button id="save-btn" class="btn primary save-btn">Save</button>
     </div>
   </div>
 
