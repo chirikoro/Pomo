@@ -189,7 +189,7 @@ pub fn run() {
                     }
                 });
                 tray.on_tray_icon_event(|tray, event| {
-                    if let TrayIconEvent::Click { .. } = event {
+                    if let TrayIconEvent::DoubleClick { .. } = event {
                         toggle_window(tray.app_handle());
                     }
                 });
