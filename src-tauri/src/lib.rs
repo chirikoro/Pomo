@@ -195,6 +195,12 @@ pub fn run() {
                 });
             }
 
+            // Open devtools for debugging
+            if let Some(window) = app.get_webview_window("main") {
+                #[cfg(debug_assertions)]
+                window.open_devtools();
+            }
+
             // Hide to tray on close instead of quitting
             if let Some(window) = app.get_webview_window("main") {
                 let window_clone = window.clone();
