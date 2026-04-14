@@ -22,7 +22,7 @@ pub struct PomoApp {
     show_settings: bool,
     audio: Option<AudioManager>,
     tray_handle: Option<TrayHandle>,
-    is_minimized: bool,
+    window_visible: bool,
 }
 
 impl PomoApp {
@@ -50,7 +50,7 @@ impl PomoApp {
             show_settings: false,
             audio,
             tray_handle,
-            is_minimized: false,
+            window_visible: true,
         }
     }
 
@@ -119,12 +119,12 @@ impl PomoApp {
                 } else if event.id() == handle.menu_ids.skip.id() {
                     self.handle_control_action(ControlAction::Skip);
                 } else if event.id() == handle.menu_ids.show_hide.id() {
-                    self.is_minimized = !self.is_minimized;
-                    if self.is_minimized {
-                        ctx.send_viewport_cmd(ViewportCommand::Minimized(true));
-                    } else {
-                        ctx.send_viewport_cmd(ViewportCommand::Minimized(false));
+                    self.window_visible = !self.window_visible;
+                    if self.window_visible {
+                        ctx.send_viewport_cmd(ViewportCommand::Visible(true));
                         ctx.send_viewport_cmd(ViewportCommand::Focus);
+                    } else {
+                        ctx.send_viewport_cmd(ViewportCommand::Visible(false));
                     }
                 } else if event.id() == handle.menu_ids.quit.id() {
                     ctx.send_viewport_cmd(ViewportCommand::Close);
@@ -136,11 +136,11 @@ impl PomoApp {
 
 impl eframe::App for PomoApp {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
-        // Handle close request -> minimize instead
+        // Handle close request -> hide to tray instead of quitting
         if ctx.input(|i| i.viewport().close_requested()) {
             ctx.send_viewport_cmd(ViewportCommand::CancelClose);
-            ctx.send_viewport_cmd(ViewportCommand::Minimized(true));
-            self.is_minimized = true;
+            ctx.send_viewport_cmd(ViewportCommand::Visible(false));
+            self.window_visible = false;
         }
 
         // Poll tray events
