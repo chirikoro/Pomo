@@ -1,0 +1,236 @@
+@font-face {
+  font-family: 'NotoSans';
+  src: url('assets/fonts/NotoSans-Bold.ttf') format('truetype');
+  font-weight: bold;
+}
+
+:root {
+  --bg: #FFF8F0;
+  --surface: #FFF1E6;
+  --text: #2D3436;
+  --text-sub: #888888;
+  --btn-idle: #E0D8D0;
+  --btn-hover: #FFD4B8;
+
+  --work: #FF6B6B;
+  --work-track: #FFE0E0;
+  --break: #51D88A;
+  --break-track: #D4F5E0;
+  --long: #9B8EC4;
+  --long-track: #E8E0F0;
+
+  --phase-color: var(--work);
+  --phase-track: var(--work-track);
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  font-family: 'NotoSans', 'Segoe UI', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  width: 320px;
+  height: 480px;
+  overflow: hidden;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 20px 0;
+  font-size: 18px;
+  font-weight: bold;
+  color: var(--phase-color);
+}
+
+.icon-btn {
+  background: none;
+  border: none;
+  font-size: 20px;
+  color: var(--text-sub);
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 8px;
+  transition: background 0.2s;
+}
+.icon-btn:hover { background: var(--surface); }
+
+/* Progress Ring */
+.ring-container {
+  position: relative;
+  width: 200px;
+  height: 200px;
+  margin: 16px auto;
+}
+
+#progress-ring { width: 100%; height: 100%; }
+
+.ring-track {
+  fill: none;
+  stroke: var(--phase-track);
+  stroke-width: 10;
+}
+
+.ring-fill {
+  fill: none;
+  stroke: var(--phase-color);
+  stroke-width: 10;
+  stroke-linecap: round;
+  transition: stroke-dashoffset 0.3s ease, stroke 0.5s ease;
+}
+
+.ring-text {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  text-align: center;
+}
+
+#time-display {
+  font-size: 42px;
+  font-weight: bold;
+  color: var(--text);
+  letter-spacing: 2px;
+  line-height: 1;
+}
+
+#session-display {
+  font-size: 13px;
+  color: var(--text-sub);
+  margin-top: 6px;
+}
+
+/* Buttons */
+.controls {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 8px;
+}
+
+.btn {
+  border: none;
+  cursor: pointer;
+  font-family: inherit;
+  font-weight: bold;
+  border-radius: 20px;
+  transition: background 0.2s, transform 0.1s;
+}
+.btn:hover { transform: scale(1.03); }
+.btn:active { transform: scale(0.97); }
+
+.btn.primary {
+  background: var(--phase-color);
+  color: white;
+  font-size: 16px;
+  padding: 10px 28px;
+  min-width: 110px;
+  transition: background 0.5s ease;
+}
+.btn.primary:hover { filter: brightness(1.1); }
+
+.btn.secondary {
+  background: var(--btn-idle);
+  color: var(--text);
+  font-size: 14px;
+  padding: 10px 22px;
+}
+.btn.secondary:hover { background: var(--btn-hover); }
+
+.btn.small {
+  background: var(--btn-idle);
+  color: var(--text-sub);
+  font-size: 12px;
+  padding: 6px 18px;
+}
+.btn.small:hover { background: var(--btn-hover); }
+
+/* Cycle Dots */
+.cycle-dots {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  border: 2px solid var(--text-sub);
+  background: transparent;
+  transition: background 0.3s, border-color 0.5s;
+}
+.dot.filled {
+  background: var(--phase-color);
+  border-color: var(--phase-color);
+}
+
+/* BGM Selector */
+.bgm-selector {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 6px;
+  margin-top: 16px;
+}
+
+.bgm-label {
+  font-size: 12px;
+  color: var(--text-sub);
+  margin-right: 4px;
+}
+
+.bgm-btn {
+  background: var(--surface);
+  color: var(--text-sub);
+  border: none;
+  border-radius: 12px;
+  padding: 4px 14px;
+  font-size: 11px;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s;
+}
+.bgm-btn:hover { background: var(--btn-hover); }
+.bgm-btn.active {
+  background: var(--phase-color);
+  color: white;
+}
+
+/* Settings */
+.settings-form {
+  padding: 24px 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.settings-form label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 14px;
+  color: var(--text);
+}
+
+.settings-form input[type="range"] {
+  flex: 1;
+  accent-color: var(--work);
+  height: 6px;
+}
+
+.settings-form span {
+  min-width: 24px;
+  text-align: right;
+  font-weight: bold;
+}
+
+.save-btn {
+  align-self: center;
+  margin-top: 8px;
+}

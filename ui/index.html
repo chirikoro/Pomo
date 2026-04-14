@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pomo</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <!-- Timer View -->
+  <div id="timer-view">
+    <div class="header">
+      <span id="phase-label">WORK</span>
+      <button id="settings-btn" class="icon-btn" onclick="toggleSettings()">&#9881;</button>
+    </div>
+
+    <div class="ring-container">
+      <svg id="progress-ring" viewBox="0 0 200 200">
+        <circle class="ring-track" cx="100" cy="100" r="84" />
+        <circle id="ring-progress" class="ring-fill" cx="100" cy="100" r="84"
+                stroke-dasharray="527.79" stroke-dashoffset="527.79"
+                transform="rotate(-90 100 100)" />
+      </svg>
+      <div class="ring-text">
+        <div id="time-display">25:00</div>
+        <div id="session-display">Session 1/4</div>
+      </div>
+    </div>
+
+    <div class="controls">
+      <button id="start-btn" class="btn primary" onclick="toggleStartPause()">Start</button>
+      <button class="btn secondary" onclick="doReset()">Reset</button>
+    </div>
+    <div class="controls">
+      <button class="btn small" onclick="doSkip()">Skip</button>
+    </div>
+
+    <div id="cycle-dots" class="cycle-dots"></div>
+
+    <div class="bgm-selector">
+      <span class="bgm-label">BGM:</span>
+      <button class="bgm-btn" data-mode="cafe" onclick="setBgm('cafe')">Cafe</button>
+      <button class="bgm-btn" data-mode="nature" onclick="setBgm('nature')">Nature</button>
+      <button class="bgm-btn active" data-mode="off" onclick="setBgm('off')">Off</button>
+    </div>
+  </div>
+
+  <!-- Settings View -->
+  <div id="settings-view" style="display:none">
+    <div class="header">
+      <span>Settings</span>
+      <button class="icon-btn" onclick="toggleSettings()">&#10005;</button>
+    </div>
+    <div class="settings-form">
+      <label>Work: <input type="range" id="s-work" min="1" max="60" value="25">
+        <span id="s-work-val">25</span> min</label>
+      <label>Break: <input type="range" id="s-break" min="1" max="30" value="5">
+        <span id="s-break-val">5</span> min</label>
+      <label>Long Break: <input type="range" id="s-long" min="1" max="60" value="15">
+        <span id="s-long-val">15</span> min</label>
+      <label>Sets: <input type="range" id="s-sets" min="1" max="10" value="4">
+        <span id="s-sets-val">4</span></label>
+      <button class="btn primary save-btn" onclick="saveSettings()">Save</button>
+    </div>
+  </div>
+
+  <!-- Audio elements (hidden) -->
+  <audio id="audio-1" loop preload="auto"></audio>
+  <audio id="audio-2" loop preload="auto"></audio>
+
+  <script src="app.js"></script>
+</body>
+</html>
