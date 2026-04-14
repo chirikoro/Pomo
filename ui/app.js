@@ -1,17 +1,6 @@
 // =========================================================
-// Pomo - Frontend (no inline handlers)
+// Pomo - Frontend
 // =========================================================
-
-function showError(msg) {
-  let el = document.getElementById('debug-log');
-  if (!el) {
-    el = document.createElement('div');
-    el.id = 'debug-log';
-    el.style.cssText = 'position:fixed;bottom:0;left:0;right:0;background:red;color:white;font-size:11px;padding:4px 8px;z-index:9999;max-height:120px;overflow:auto;';
-    document.body.appendChild(el);
-  }
-  el.textContent += msg + '\n';
-}
 
 function waitForTauri(callback) {
   let attempts = 0;
@@ -19,9 +8,7 @@ function waitForTauri(callback) {
     attempts++;
     if (window.__TAURI__ && window.__TAURI__.core && window.__TAURI__.core.invoke) {
       callback();
-    } else if (attempts > 50) {
-      showError('ERROR: window.__TAURI__ not found after 5s.');
-    } else {
+    } else if (attempts < 50) {
       setTimeout(check, 100);
     }
   };
@@ -70,7 +57,7 @@ function initApp() {
         const s = await invoke('tick');
         updateUI(s);
         if (s.phase_finished) onPhaseFinished(s);
-      } catch (e) { showError('tick: ' + e); }
+      } catch (e) {}
     }, 200);
   }
 
@@ -137,12 +124,12 @@ function initApp() {
       else { ns = await invoke('start'); startPolling(); }
       updateUI(ns);
       if (ns.is_running && currentBgm !== 'off') playBgm(currentBgm, currentPhase);
-    } catch (e) { showError('startPause: ' + e); }
+    } catch (e) {}
   });
 
   resetBtn.addEventListener('click', async () => {
     try { stopPolling(); updateUI(await invoke('reset')); stopAllAudio(); }
-    catch (e) { showError('reset: ' + e); }
+    catch (e) {}
   });
 
   skipBtn.addEventListener('click', async () => {
@@ -150,7 +137,7 @@ function initApp() {
       const s = await invoke('skip');
       updateUI(s);
       if (currentBgm !== 'off') playBgm(currentBgm, s.phase);
-    } catch (e) { showError('skip: ' + e); }
+    } catch (e) {}
   });
 
   // --- BGM ---
@@ -206,7 +193,7 @@ function initApp() {
       document.getElementById('s-long-val').textContent = s.long_break_minutes;
       document.getElementById('s-sets').value = s.num_sets;
       document.getElementById('s-sets-val').textContent = s.num_sets;
-    }).catch(e => showError('settings: ' + e));
+    }).catch(() => {});
   }
 
   function closeSettings() {
@@ -227,7 +214,7 @@ function initApp() {
       };
       updateUI(await invoke('save_settings', { newSettings: ns }));
       closeSettings();
-    } catch (e) { showError('save: ' + e); }
+    } catch (e) {}
   });
 
   ['s-work', 's-break', 's-long', 's-sets'].forEach(id => {
@@ -246,5 +233,5 @@ function initApp() {
   invoke('tick').then(s => {
     updateUI(s);
     if (s.is_running) startPolling();
-  }).catch(e => showError('init: ' + e));
+  }).catch(() => {});
 }
