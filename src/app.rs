@@ -109,6 +109,20 @@ impl PomoApp {
         }
     }
 
+    fn hide_window(&mut self, ctx: &egui::Context) {
+        self.window_visible = false;
+        // Move window off-screen and minimize to avoid taskbar entry
+        ctx.send_viewport_cmd(ViewportCommand::OuterPosition(egui::pos2(-10000.0, -10000.0)));
+        ctx.send_viewport_cmd(ViewportCommand::Minimized(true));
+    }
+
+    fn show_window(&mut self, ctx: &egui::Context) {
+        self.window_visible = true;
+        ctx.send_viewport_cmd(ViewportCommand::Minimized(false));
+        ctx.send_viewport_cmd(ViewportCommand::OuterPosition(egui::pos2(100.0, 100.0)));
+        ctx.send_viewport_cmd(ViewportCommand::Focus);
+    }
+
     fn poll_tray_events(&mut self, ctx: &egui::Context) {
         while let Some(event) = tray::poll_tray_events() {
             if let Some(handle) = &self.tray_handle {
@@ -119,14 +133,14 @@ impl PomoApp {
                 } else if event.id() == handle.menu_ids.skip.id() {
                     self.handle_control_action(ControlAction::Skip);
                 } else if event.id() == handle.menu_ids.show_hide.id() {
-                    self.window_visible = !self.window_visible;
                     if self.window_visible {
-                        ctx.send_viewport_cmd(ViewportCommand::Visible(true));
-                        ctx.send_viewport_cmd(ViewportCommand::Focus);
+                        self.hide_window(ctx);
                     } else {
-                        ctx.send_viewport_cmd(ViewportCommand::Visible(false));
+                        self.show_window(ctx);
                     }
                 } else if event.id() == handle.menu_ids.quit.id() {
+                    // Allow the close to actually happen
+                    self.window_visible = true;
                     ctx.send_viewport_cmd(ViewportCommand::Close);
                 }
             }
@@ -138,9 +152,12 @@ impl eframe::App for PomoApp {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
         // Handle close request -> hide to tray instead of quitting
         if ctx.input(|i| i.viewport().close_requested()) {
-            ctx.send_viewport_cmd(ViewportCommand::CancelClose);
-            ctx.send_viewport_cmd(ViewportCommand::Visible(false));
-            self.window_visible = false;
+            if self.window_visible {
+                // User clicked X: hide to tray, don't quit
+                ctx.send_viewport_cmd(ViewportCommand::CancelClose);
+                self.hide_window(ctx);
+            }
+            // If window_visible is true (set by Quit), let the close proceed
         }
 
         // Poll tray events
@@ -159,11 +176,11 @@ impl eframe::App for PomoApp {
             self.update_tray_label();
         }
 
-        // Request repaint at appropriate rate
+        // Always keep the event loop alive for tray events and timer ticks
         if self.timer.is_running() {
             ctx.request_repaint_after(Duration::from_millis(100));
         } else {
-            ctx.request_repaint_after(Duration::from_secs(1));
+            ctx.request_repaint_after(Duration::from_millis(500));
         }
 
         // Draw UI
