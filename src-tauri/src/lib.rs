@@ -113,10 +113,16 @@ fn save_settings(
 
 fn toggle_window(app: &AppHandle) {
     if let Some(window) = app.get_webview_window("main") {
-        if window.is_visible().unwrap_or(false) {
+        let visible = window.is_visible().unwrap_or(false);
+        let minimized = window.is_minimized().unwrap_or(false);
+
+        if visible && !minimized {
+            // Window is showing — hide it
             let _ = window.hide();
         } else {
+            // Window is hidden or minimized — restore it
             let _ = window.show();
+            let _ = window.unminimize();
             let _ = window.set_focus();
         }
     }
