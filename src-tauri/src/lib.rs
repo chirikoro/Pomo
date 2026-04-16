@@ -78,7 +78,7 @@ fn pause(state: tauri::State<'_, AppState>) -> TimerStatus {
 #[tauri::command]
 fn reset(state: tauri::State<'_, AppState>) -> TimerStatus {
     let mut timer = state.timer.lock().unwrap();
-    timer.reset();
+    timer.full_reset();
     get_timer_status(&mut timer)
 }
 

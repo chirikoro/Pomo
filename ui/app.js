@@ -25,6 +25,7 @@ function initApp() {
 
   let currentBgm = 'off';
   let currentPhase = 'work';
+  let timerRunning = false;
   let timerInterval = null;
 
   const PHASE_COLORS = {
@@ -85,9 +86,12 @@ function initApp() {
 
     renderDots(s.cycle, s.num_sets);
 
+    // Track running state for BGM control
+    timerRunning = s.is_running;
+
     if (s.phase !== currentPhase) {
       currentPhase = s.phase;
-      if (currentBgm !== 'off') playBgm(currentBgm, currentPhase);
+      if (currentBgm !== 'off' && timerRunning) playBgm(currentBgm, currentPhase);
       updateBgmButtons();
     }
   }
@@ -128,10 +132,16 @@ function initApp() {
     try {
       const s = await invoke('tick');
       let ns;
-      if (s.is_running) { ns = await invoke('pause'); stopPolling(); }
-      else { ns = await invoke('start'); startPolling(); }
+      if (s.is_running) {
+        ns = await invoke('pause');
+        stopPolling();
+        stopAllAudio();
+      } else {
+        ns = await invoke('start');
+        startPolling();
+        if (currentBgm !== 'off') playBgm(currentBgm, ns.phase);
+      }
       updateUI(ns);
-      if (ns.is_running && currentBgm !== 'off') playBgm(currentBgm, currentPhase);
     } catch (e) {}
   });
 
@@ -154,7 +164,7 @@ function initApp() {
       const mode = btn.dataset.mode;
       currentBgm = mode;
       updateBgmButtons();
-      if (mode === 'off') { stopAllAudio(); return; }
+      if (mode === 'off' || !timerRunning) { stopAllAudio(); return; }
       playBgm(mode, currentPhase);
     });
   });
